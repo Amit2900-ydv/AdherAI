@@ -31,13 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const parsed = saved ? JSON.parse(saved) : null;
 
             // Ensure we have an array, even if saved data is invalid
-            const merged = Array.isArray(parsed) ? [...parsed] : [...initialUsers];
+            let merged = Array.isArray(parsed) ? [...parsed] : [...initialUsers];
 
-            // Always merge in initialUsers to ensure mock accounts exist
+            // Always merge in initialUsers to ensure mock accounts exist and are UP TO DATE
+            // We prioritize initialUsers (demo accounts) by filtering out any existing ones with the same email
             initialUsers.forEach((initUser: User) => {
-                if (!merged.some(u => u.email === initUser.email)) {
-                    merged.push(initUser);
-                }
+                merged = merged.filter(u => u.email.toLowerCase() !== initUser.email.toLowerCase());
+                merged.push(initUser);
             });
             return merged;
         } catch (e) {
@@ -62,9 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = async (email: string, password: string) => {
+        const cleanEmail = email.trim();
+        const cleanPassword = password.trim();
+
         // Find user in registered list - case-insensitive email
         const foundUser = registeredUsers.find(
-            u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+            u => u.email.toLowerCase() === cleanEmail.toLowerCase() && u.password === cleanPassword
         );
 
         if (foundUser) {
